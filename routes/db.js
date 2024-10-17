@@ -4,8 +4,8 @@ const mysql = require("mysql2");
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "maximag", // Your password
-  database: "Top_G_Python", // Your database name
+  password: "maximag",
+  database: "Top_G_Python",
 });
 
 // Connect to the database

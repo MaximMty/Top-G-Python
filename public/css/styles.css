@@ -1,0 +1,241 @@
+/* General Styles */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #1c1c1c;
+  color: #e0c084;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: #e0c084;
+  text-decoration: none;
+}
+
+/* Navbar Styles */
+.navbar {
+  background-color: #333333;
+  padding: 1rem;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 1000;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.logo {
+  margin-left: 10px; /* Adjust margin to the left */
+}
+
+/* Navigation Links */
+.nav-links {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links li {
+  margin: 0 1.5rem;
+}
+
+.nav-links a {
+  color: #e0c084;
+  text-decoration: none;
+  font-size: 1.1rem;
+  padding: 0.5rem 0;
+}
+
+.nav-links a:hover {
+  color: #ffffff;
+}
+
+/* Login Button */
+.navbar .btn {
+  padding: 0.5rem 1rem;
+  background-color: #e0c084;
+  color: #333333;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.navbar .btn:hover {
+  background-color: #ffffff;
+  color: #333333;
+}
+
+/* Hero Section */
+.hero-section {
+  background-image: url("herobg.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+}
+
+.transbox h1 {
+  color: #ffffff;
+  font-size: 3rem;
+  margin-bottom: 20px;
+  background-color: #000000;
+  border: 1px solid black;
+  opacity: 0.9;
+  border-radius: 10px;
+}
+
+.hero-section p {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  background-color: #000000;
+  border: 2px solid black;
+  opacity: 0.9;
+  border-radius: 10px;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  background-color: #e0c084;
+  color: #333333;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* Main Section */
+.main-section {
+  padding: 60px 20px;
+  background-color: #333333;
+  text-align: center;
+}
+
+.main-section h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+/* Additional Section Styles */
+section {
+  padding: 60px 20px;
+  background-color: #262626;
+  text-align: center;
+}
+
+section h3 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+section p {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+section .btn {
+  margin-top: 20px;
+}
+
+/* Leaderboard Table */
+table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+  color: #e0c084;
+}
+
+th,
+td {
+  padding: 15px;
+  border: 1px solid #e0c084;
+  text-align: center;
+}
+
+th {
+  background-color: #333333;
+}
+
+td {
+  background-color: #262626;
+}
+
+/* Footer Styles */
+footer {
+  background-color: #1c1c1c;
+  padding: 20px;
+  text-align: center;
+  color: #e0c084;
+  margin-top: 20px;
+}
+
+/* Hamburger Menu Styles */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+  margin-right: 10px; /* Adjusted to provide spacing */
+}
+
+.hamburger span {
+  height: 2px;
+  width: 25px;
+  background-color: #e0c084;
+  margin: 4px;
+  transition: 0.3s;
+}
+
+.hamburger.active span:nth-child(1) {
+  transform: rotate(45deg) translateY(8px);
+}
+
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+  transform: rotate(-45deg) translateY(-8px);
+}
+
+/* Media Query for Mobile Screens */
+@media (max-width: 768px) {
+  .nav-links {
+    display: none; /* Hide the nav links by default */
+    position: absolute;
+    top: 60px; /* Adjust as needed */
+    left: 20px; /* Align left */
+    background-color: #333333;
+    padding: 10px;
+    border-radius: 8px;
+    flex-direction: column; /* Stack links vertically */
+    width: calc(100% - 40px); /* Adjust width to fit screen */
+  }
+
+  .nav-links.active {
+    display: flex; /* Show when active */
+  }
+
+  .hamburger {
+    display: flex; /* Show hamburger on mobile */
+  }
+
+  .hero-section h1 {
+    font-size: 2rem; /* Adjust heading size on mobile */
+  }
+
+  .hero-section p {
+    font-size: 1rem; /* Adjust paragraph size on mobile */
+  }
+}

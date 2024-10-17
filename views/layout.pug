@@ -1,0 +1,53 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    link(rel="stylesheet" href="css/styles.css") 
+    block head
+
+  body
+    // Navbar with Hamburger Menu
+    div.navbar
+      div.navbar-container
+        div.hamburger
+          span
+          span
+          span
+        div.logo
+          a(href="/") Top G Python
+        ul.nav-links
+          li
+            a(href="#Learn") Learn
+          li
+            a(href="/Game") Game
+          li
+            a(href="#Leaderboard") Leaderboard
+          li
+            a(href="#About us") About Us
+          li
+            a(href="/profile") Profile
+        if user
+            a.btn(href='/logout') Logout
+        else
+            a.btn(href='/login') Login
+
+    // Block for specific page content
+    block content
+
+    // Scripts for Hamburger Menu functionality
+    script.
+      document.addEventListener('DOMContentLoaded', () => {
+        const hamburger = document.querySelector('.hamburger');
+        const navLinks = document.querySelector('.nav-links');
+
+        hamburger.addEventListener('click', () => {
+          hamburger.classList.toggle('active');
+          navLinks.classList.toggle('active');
+        });
+      });
+      
+    block scripts
+
+
+

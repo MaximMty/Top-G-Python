@@ -1,0 +1,27 @@
+extends layout
+
+block head
+  title Register
+  link(rel="stylesheet", href="css/login.css")
+  script(src="https://code.jquery.com/jquery-3.6.0.min.js")
+  script(src="/js/register.js") 
+
+block content
+  div.login-container
+    h1 Register
+    if message
+      p(style='color: red;') #{message}
+    form(action='/register', method='post', id='registerForm')
+      label(for='username') Username:
+      input(type='text', name='username', id='username', required)
+      span#username-status
+      br
+      label(for='password') Password:
+      input(type='password', name='password', id='password', required)
+      br
+      label(for='confirm_password') Confirm Password:
+      input(type='password', name='confirm_password', id='confirm_password', required)
+      br
+      button(type='submit', id='registerBtn') Register
+      button(type='reset') Reset
+      a.create-account(href='/login') Already have an account

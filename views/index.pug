@@ -1,0 +1,61 @@
+extends layout
+
+block head 
+  title Home
+
+block content
+  div.hero-section
+    div.transbox
+      h1 Top G Python.
+      p The best way to learn Python from Level 0.
+    if user
+      a.btn(href="/logout") Logout
+    else 
+      a.btn(href="/login") Login
+
+  div.main-section
+    h2 About the Website
+    p This website is designed to help users learn Python from scratch through interactive lessons, quizzes, and games.
+
+  section
+    h3 Learn Python
+    p Dive into our beginner-friendly Python tutorials covering topics like Variables, Control Flow, Functions, and more.
+    a.btn(href="#StartLearning") Start Learning
+
+  section
+    h3 Python Game
+    p Challenge yourself with our Python-based hybrid game. Answer Python questions correctly to progress on the board. Take risks to move ahead faster!
+    a.btn(href="#PlayNow") Play Now
+
+  section
+    h3 Leaderboard
+    p Check out the top players and their scores! Will you be the next Python Top G?
+    table
+      tr
+        th Rank
+        th Name
+        th Score
+      tr
+        td 1
+        td Player1
+        td 1000
+      tr
+        td 2
+        td Player2
+        td 900
+      tr
+        td 3
+        td Player3
+        td 850
+    a.btn(href="#TryToBeatThem") Try to Beat Them
+
+  section
+    h3 About Us
+    p We are a passionate team of developers and educators, dedicated to helping you learn Python in a fun and engaging way.
+
+  section
+    h3 Blog
+    p Stay updated with the latest tips, tutorials, and news about Python development.
+
+  footer
+      p &copy; 2024 Top G Python. All rights reserved.

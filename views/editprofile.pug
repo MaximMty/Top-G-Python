@@ -1,0 +1,46 @@
+extends layout
+
+block head 
+  title Edit Profile
+  link(rel="stylesheet", href="css/profile.css")
+  script(src="https://code.jquery.com/jquery-3.6.0.min.js") // Include jQuery
+  script(src="/js/editprofile.js") // Separate JS logic for profile page
+
+block content
+  div.profile-container
+    h1 Edit Profile
+
+    // Avatar section
+    div.avatar-section
+      img(src=user.avatar || '/uploads/avatars/default.png', alt="User Avatar")
+      form(method="POST" action="/avatar" enctype="multipart/form-data")
+        label(for="avatar") Change Avatar:
+        input(type="file" name="avatar" accept="image/*")
+        button(type="submit") Upload Avatar
+
+      // Remove Avatar section
+      form(method="POST" action="/remove-avatar")
+        button(type="submit") Remove Avatar
+
+    // User details section
+    div.user-details
+      form(method="POST" action="/update")
+        label(for="username") Username:
+        input(
+          type="text"
+          name="username"
+          id="username"
+          value=user.username
+          data-current-username=user.username
+          required
+        )
+        span#username-status
+
+        label(for="email") Email:
+        input(type="email" name="email" value=user.email required)
+
+        label(for="password") Change Password:
+        input(type="password" name="password" placeholder="New password")
+
+        button(type="submit" id="saveChangesBtn" disabled) Save Changes
+

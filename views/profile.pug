@@ -1,0 +1,28 @@
+extends layout
+
+block head 
+  title Profile
+  link(rel="stylesheet", href="css/profile.css")
+
+block content
+  div.profile-container
+    h1 Profile Page
+
+    // Avatar Section
+    div.avatar-section
+      img(src=user.avatar alt="User Avatar")
+
+    // User Details
+    div.user-details
+      p
+        strong Username: 
+        | #{user.username}
+
+      p
+        strong Email: 
+        | #{user.email}
+
+    div.user-details
+      // Edit Profile Button
+      a(href="/editprofile") 
+        button(type="button") Edit Profile

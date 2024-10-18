@@ -123,26 +123,26 @@ router.post("/select-question", (req, res) => {
 // Route to submit the answer
 router.post("/submit-answer", (req, res) => {
   const { answer } = req.body;
-  const currentPlayerIndex = req.session.currentPlayerIndex;
+  let currentPlayerIndex = req.session.currentPlayerIndex; // Use let instead of const
   const currentPlayer = req.session.players[currentPlayerIndex];
-  const currentQuestion = req.session.currentQuestion; // Retrieve the current question from the session
+  const currentQuestion = req.session.currentQuestion;
 
   if (!currentQuestion) {
     return res.redirect("/game/play"); // Redirect if no current question is found
   }
 
-  const correctAnswer = currentQuestion.correct_answer; // Ensure currentQuestion is defined
+  const correctAnswer = currentQuestion.correct_answer;
 
   if (answer === correctAnswer) {
     currentPlayer.score += 10; // Add points for correct answer
     req.session.players[currentPlayerIndex] = currentPlayer; // Update session
   }
 
-  // Proceed to the next player's turn
-  currentPlayerIndex = (currentPlayerIndex + 1) % req.session.players.length; // Move to the next player
+  // Update currentPlayerIndex for the next turn
+  currentPlayerIndex = (currentPlayerIndex + 1) % req.session.players.length;
   req.session.currentPlayerIndex = currentPlayerIndex; // Update session
 
-  res.redirect("/game/play"); // Redirect to play again
+  res.redirect("/game/play");
 });
 
 // Render the game page

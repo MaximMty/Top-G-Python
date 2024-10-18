@@ -1,7 +1,7 @@
 extends layout
 
 block content
-  .hero-section
+  .hero-section-nobg 
     h1 Roll: #{roll}
     h2 #{currentPlayer.name}, choose your question difficulty
     form(action="/game/select-question", method="POST")

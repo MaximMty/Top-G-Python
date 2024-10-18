@@ -1,22 +1,26 @@
 extends layout
 
 block content
-  .hero-section
+  .hero-section-nobg
     h1 Question for #{currentPlayer.name}
     h2= question.question
 
     // Display answer options
     form(action="/game/submit-answer", method="POST")
       div
-        label
-          input(type="radio" name="answer" value="A") A) #{question.option_a}
+        label(for="answerA")
+          input(type="radio" id="answerA" name="answer" value="A")
+          | #{question.option_a}
       div
-        label
-          input(type="radio" name="answer" value="B") B) #{question.option_b}
+        label(for="answerB")
+          input(type="radio" id="answerB" name="answer" value="B")
+          | #{question.option_b}
       div
-        label
-          input(type="radio" name="answer" value="C") C) #{question.option_c}
+        label(for="answerC")
+          input(type="radio" id="answerC" name="answer" value="C")
+          | #{question.option_c}
       div
-        label
-          input(type="radio" name="answer" value="D") D) #{question.option_d}
+        label(for="answerD")
+          input(type="radio" id="answerD" name="answer" value="D")
+          | #{question.option_d}
       button.btn(type="submit") Submit Answer

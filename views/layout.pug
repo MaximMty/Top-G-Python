@@ -3,7 +3,7 @@ html(lang="en")
   head
     meta(charset="UTF-8")
     meta(name="viewport" content="width=device-width, initial-scale=1.0")
-    link(rel="stylesheet" href="css/styles.css") 
+    link(rel="stylesheet" href="/css/styles.css") 
     block head
 
   body
@@ -28,9 +28,9 @@ html(lang="en")
           li
             a(href="/profile") Profile
         if user
-            a.btn(href='/logout') Logout
+          a.btn(href='/logout') Logout
         else
-            a.btn(href='/login') Login
+          a.btn(href='/login') Login
 
     // Block for specific page content
     block content
@@ -46,8 +46,5 @@ html(lang="en")
           navLinks.classList.toggle('active');
         });
       });
-      
+
     block scripts
-
-
-

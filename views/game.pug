@@ -1,43 +1,33 @@
 extends layout
 
-block head
-  title Game Page // Optional: Customize the title for the Game page
-
 block content
-  // Hero Section (Optional, you can customize or remove)
-  .hero-section
+  .hero-section-nobg
     .transbox
-      h1 Welcome to the Game!
-      p Roll the dice and answer the questions!
+      h1 Add Players to the Game
 
-  // Main Game Section
-  .main-section
-    h2 Players
-    form(action="/add-player", method="POST")
-      input(type="text", name="name", placeholder="Enter Player Name", required)
-      button(type="submit") Add Player
+      // Form to add players
+      form(action="/game/add-player", method="POST")
+        input(type="text", name="name", placeholder="Enter Player Name", required)
+        button.btn(type="submit") Add Player
 
-    // Players List
-    if players && players.length > 0
+    // Display the list of players if any are added
+    if players.length > 0
+      h2 Current Players
       ul
         each player, index in players
           li= player.name
 
-    // Dice Roll Section
-    h3 Dice Roll
-    button(id="rollDice") Roll Dice
-    p#diceValue 0 // Placeholder for dice value
-
-    // Question Section
-    h3 Question
-    p#questionText No question yet // Placeholder for question text
-    input#answerInput(type="text", placeholder="Your answer")
-    button(id="submitAnswer") Submit Answer
-
-  // Footer (Optional)
-  footer
-    p © 2024 Your Game Name. All rights reserved.
-
+      // Button to start the game
+      form(action="/game/start-game", method="POST")
+        button.btn(type="submit") Start Game
+    else
+      p No players added yet. Add a player to get started.
+      
 block scripts
-  // Include any additional scripts for the game functionality
-  script(src="js/game.js") // Ensure you link to your specific game-related JavaScript
+  script(src="/js/game.js")
+  script.
+    // Initialize the game state with players from the server
+    document.addEventListener('DOMContentLoaded', () => {
+      const playerList = !{JSON.stringify(players)};
+      startGame(playerList);
+    });

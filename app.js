@@ -10,6 +10,9 @@ const gameRoutes = require("./routes/game");
 
 const app = express();
 
+app.use("/css", express.static(path.join(__dirname, "css")));
+app.use("/js", express.static(path.join(__dirname, "public/js")));
+
 app.set("view engine", "pug");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
@@ -106,14 +109,6 @@ app.post("/login", (req, res) => {
       res.render("login", { message: "Invalid username or password" });
     }
   });
-});
-
-app.get("/game", (req, res) => {
-  if (req.session.user) {
-    res.render("game", { user: req.session.user, players });
-  } else {
-    res.render("login", { message: "Please log in to access the game" });
-  }
 });
 
 app.get("/logout", (req, res) => {

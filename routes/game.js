@@ -2,104 +2,137 @@ const express = require("express");
 const router = express.Router();
 const db = require("./db");
 
-// Store players and game state in memory
 let players = [];
-let currentPlayerIndex = 0;
+let currentPlayerIndex = 0; // Initialize the starting player index
 
-// Add Player Route
+// Route to add a player
 router.post("/add-player", (req, res) => {
   const { name } = req.body;
   if (name) {
-    const player = { id: players.length + 1, name, score: 0 };
-    players.push(player);
+    players.push({ name, score: 0 }); // Add player with initial score
   }
-  res.redirect("/game");
+  res.redirect("/game"); // Redirect back to the game setup page
 });
 
-// Roll Dice Route
-router.post("/roll-dice", (req, res) => {
-  const diceValue = Math.floor(Math.random() * 6) + 1;
+// Route to start the game
+router.post("/start-game", (req, res) => {
+  if (players.length === 0) {
+    return res.redirect("/game"); // Prevent starting if no players are added
+  }
+  currentPlayerIndex = 0; // Reset player index
+  res.redirect("/game/play"); // Start the game
+});
+
+// Route to render the game play page
+router.get("/play", (req, res) => {
+  if (!players || players.length === 0) {
+    return res.redirect("/game"); // Handle case if players are not defined
+  }
   const currentPlayer = players[currentPlayerIndex];
-
-  res.json({ diceValue, player: currentPlayer });
+  res.render("play", { player: currentPlayer, players });
 });
 
-// Get Question (High/Low Risk) Route
-router.get("/get-question/:risk", (req, res) => {
-  const { risk } = req.params;
-  const table = risk === "high" ? "high_risk_questions" : "low_risk_questions";
-  const query = `SELECT * FROM ${table} ORDER BY RAND() LIMIT 1`;
+// Route to handle dice roll
+router.post("/roll-dice", (req, res) => {
+  const diceRoll = Math.floor(Math.random() * 6) + 1;
 
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error("Error fetching question:", err);
-      return res.status(500).json({ error: "Error fetching question" });
-    }
-    res.json(results[0]); // Send the question, options, and correct answer
-  });
+  // Update player's score based on the dice roll
+  players[currentPlayerIndex].score += diceRoll;
+
+  // Move to the next player's turn
+  currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+
+  res.redirect("/game/play"); // Refresh the game play screen
 });
 
-// Submit Answer Route
-router.post("/game/submit-answer", (req, res) => {
-  const { answer, diceValue, risk } = req.body;
-  const query = `SELECT * FROM ${risk}_risk_questions WHERE correct_answer = ?`;
-
-  db.query(query, [answer], (err, results) => {
-    if (err) {
-      console.error("Error checking answer:", err);
-      return res.status(500).send("Error checking answer");
-    }
-
-    const correct = results.length > 0;
-    const tip = correct ? null : results[0].tip;
-
-    if (correct && risk === "high") {
-      players[currentPlayerIndex].score += diceValue * 2; // Double points for high-risk correct answer
-    } else if (correct) {
-      players[currentPlayerIndex].score += diceValue; // Normal points for correct low-risk answer
-    }
-
-    // Move to the next player
-    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-
-    res.json({ correct, tip });
-  });
+// Render the game page
+router.get("/", (req, res) => {
+  if (req.session.user) {
+    res.render("game", { user: req.session.user, players: players });
+  } else {
+    res.render("login", { message: "Please log in to access the game" });
+  }
 });
 
-// End Game Route
-router.post("/end-game", (req, res) => {
-  const query = "INSERT INTO leaderboard (player_id, score) VALUES (?, ?)";
+// Function to get a random question based on difficulty
+const getQuestion = (difficulty) => {
+  return new Promise((resolve, reject) => {
+    let query;
+    if (difficulty === "hard") {
+      query = "SELECT * FROM high_risk_questions ORDER BY RAND() LIMIT 1"; // Fetch a random hard question
+    } else if (difficulty === "easy") {
+      query = "SELECT * FROM low_risk_questions ORDER BY RAND() LIMIT 1"; // Fetch a random easy question
+    } else {
+      return reject(new Error("Invalid difficulty level")); // Handle invalid difficulty
+    }
 
-  players.forEach((player) => {
-    db.query(query, [player.id, player.score], (err) => {
-      if (err) console.error("Error saving leaderboard:", err);
+    db.query(query, (error, results) => {
+      if (error) {
+        return reject(error); // Handle query error
+      }
+      if (results.length === 0) {
+        return reject(new Error("No questions found")); // Handle case where no questions are found
+      }
+      resolve(results[0]); // Return the question
     });
   });
+};
 
-  // Reset the game state
-  players = [];
-  currentPlayerIndex = 0;
+// Example usage of getQuestion function
+getQuestion("hard")
+  .then((question) => {
+    console.log(question); // Handle the retrieved question here
+  })
+  .catch((error) => {
+    console.error(error); // Handle errors
+  });
 
-  res.redirect("/leaderboard");
+// Route to roll the dice
+router.post("/roll-dice", (req, res) => {
+  const currentPlayerIndex = req.session.currentPlayerIndex; // Ensure you track the current player
+  const roll = Math.floor(Math.random() * 6) + 1; // Roll a dice (1-6)
+
+  // Store the rolled value in the session
+  req.session.roll = roll;
+
+  res.render("question-selection", {
+    currentPlayer: req.session.players[currentPlayerIndex],
+    roll,
+  });
 });
 
-// Leaderboard View Route
-router.get("/leaderboard", (req, res) => {
-  const query = `
-    SELECT p.name, l.score 
-    FROM leaderboard l 
-    JOIN players p ON l.player_id = p.id 
-    ORDER BY l.score DESC
-  `;
+/// In your game.js file or the appropriate route file
+router.post("/select-question", (req, res) => {
+  const { difficulty } = req.body; // Get difficulty from the form
+  getQuestion(difficulty)
+    .then((question) => {
+      res.render("answer-question", {
+        question,
+        currentPlayer: req.session.players[req.session.currentPlayerIndex],
+      });
+    })
+    .catch((error) => {
+      console.error(error);
+      res.redirect("/game/play"); // Redirect on error
+    });
+});
 
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error("Error fetching leaderboard:", err);
-      return res.status(500).send("Error fetching leaderboard");
-    }
+// Route to submit the answer
+router.post("/submit-answer", (req, res) => {
+  const { answer } = req.body;
+  const currentPlayerIndex = req.session.currentPlayerIndex;
+  const currentPlayer = req.session.players[currentPlayerIndex];
 
-    res.render("leaderboard", { leaderboard: results });
-  });
+  // Assuming question is stored in session or retrieved again from the DB
+  const correctAnswer = currentQuestion.correct_answer; // You'll need to ensure currentQuestion is defined
+
+  if (answer === correctAnswer) {
+    currentPlayer.score += 10; // Add points for correct answer
+    req.session.players[currentPlayerIndex] = currentPlayer; // Update session
+  }
+
+  // Proceed to the next player's turn or any other logic
+  res.redirect("/game/play");
 });
 
 module.exports = router;

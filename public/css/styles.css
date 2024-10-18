@@ -89,6 +89,20 @@ a {
   text-align: center;
 }
 
+/* Hero Section */
+.hero-section-nobg {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+}
+
 .transbox h1 {
   color: #ffffff;
   font-size: 3rem;

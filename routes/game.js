@@ -3,73 +3,76 @@ const router = express.Router();
 const db = require("./db");
 
 let players = [];
-let currentPlayerIndex = 0; // Initialize the starting player index
+let currentPlayerIndex = 0;
 
 // Route to add a player
 router.post("/add-player", (req, res) => {
   const { name } = req.body;
   if (name) {
-    // Ensure the player object has a score property
     players.push({ name, score: 0 }); // Add player with initial score
   }
-  req.session.players = players; // Update session with players
-  res.redirect("/game"); // Redirect back to the game setup page
+  req.session.players = players;
+  res.redirect("/game");
 });
 
 // Route to start the game
 router.post("/start-game", (req, res) => {
   if (!req.session.players || req.session.players.length === 0) {
-    return res.redirect("/game"); // Prevent starting if no players are added
+    return res.redirect("/game");
   }
-  req.session.currentPlayerIndex = 0; // Reset player index in session
-  res.redirect("/game/play"); // Start the game
+  req.session.currentPlayerIndex = 0;
+  res.redirect("/game/play");
 });
 
 // Route to render the game play page
 router.get("/play", (req, res) => {
-  const players = req.session.players || []; // Ensure players are defined
-  const currentPlayerIndex = req.session.currentPlayerIndex; // Get the current player index
+  const players = req.session.players || [];
+  const currentPlayerIndex = req.session.currentPlayerIndex;
 
   if (players.length === 0) {
-    return res.redirect("/game"); // Handle case if players are not defined
+    return res.redirect("/game");
   }
 
-  const currentPlayer = players[currentPlayerIndex]; // Get the current player
-
+  const currentPlayer = players[currentPlayerIndex];
   if (!currentPlayer) {
-    return res.redirect("/game"); // Handle case if the current player is invalid
+    return res.redirect("/game");
   }
 
-  res.render("play", { player: currentPlayer, players });
+  // Pass session explicitly to avoid undefined errors in the template
+  res.render("play", { player: currentPlayer, players, session: req.session });
 });
 
 // Function to get a random question based on difficulty
 const getQuestion = (difficulty) => {
   return new Promise((resolve, reject) => {
     let query;
+    let points;
     if (difficulty === "hard") {
-      query = "SELECT * FROM high_risk_questions ORDER BY RAND() LIMIT 1"; // Fetch a random hard question
+      query = "SELECT * FROM high_risk_questions ORDER BY RAND() LIMIT 1";
+      points = 20;
     } else if (difficulty === "easy") {
-      query = "SELECT * FROM low_risk_questions ORDER BY RAND() LIMIT 1"; // Fetch a random easy question
+      query = "SELECT * FROM low_risk_questions ORDER BY RAND() LIMIT 1";
+      points = 10;
     } else {
-      return reject(new Error("Invalid difficulty level")); // Handle invalid difficulty
+      return reject(new Error("Invalid difficulty level"));
     }
 
     db.query(query, (error, results) => {
       if (error) {
-        return reject(error); // Handle query error
+        return reject(error);
       }
       if (results.length === 0) {
-        return reject(new Error("No questions found")); // Handle case where no questions are found
+        return reject(new Error("No questions found"));
       }
-      resolve(results[0]); // Return the question
+      resolve({ question: results[0], points }); // Return both the question and points
     });
   });
 };
 
+// Route to roll the dice (no points awarded on roll)
 router.post("/roll-dice", (req, res) => {
-  const currentPlayerIndex = req.session.currentPlayerIndex; // Retrieve the current player index
-  const players = req.session.players; // Access players from the session
+  const currentPlayerIndex = req.session.currentPlayerIndex;
+  const players = req.session.players;
 
   if (currentPlayerIndex === undefined || !players || players.length === 0) {
     return res
@@ -77,77 +80,69 @@ router.post("/roll-dice", (req, res) => {
       .send("No players found or current player index is invalid.");
   }
 
-  const currentPlayer = players[currentPlayerIndex]; // Get the current player
+  const diceRoll = req.body.diceRoll; // Use the rolled value sent from the client
+  req.session.roll = diceRoll; // Store rolled value in session
 
-  if (!currentPlayer) {
-    return res.status(400).send("Current player not found."); // Ensure current player is valid
-  }
-
-  const diceRoll = Math.floor(Math.random() * 6) + 1; // Roll a dice (1-6)
-  currentPlayer.score += diceRoll; // Update player's score
-
-  // Update session
-  req.session.players[currentPlayerIndex] = currentPlayer;
-
-  // Store rolled value in the session
-  req.session.roll = diceRoll;
-
-  // Proceed to question selection view
   res.render("question-selection", {
-    currentPlayer,
+    currentPlayer: players[currentPlayerIndex],
     roll: diceRoll,
   });
 });
 
 // Route to select a question based on difficulty
 router.post("/select-question", (req, res) => {
-  const { difficulty } = req.body; // Get difficulty from the form
-  const currentPlayerIndex = req.session.currentPlayerIndex; // Get the current player index from the session
-  const currentPlayer = req.session.players[currentPlayerIndex]; // Get the current player
+  const { difficulty } = req.body;
+  const currentPlayerIndex = req.session.currentPlayerIndex;
+  const currentPlayer = req.session.players[currentPlayerIndex];
 
   getQuestion(difficulty)
-    .then((question) => {
-      // Store the question in the session
+    .then(({ question, points }) => {
       req.session.currentQuestion = question;
+      req.session.points = points; // Store points for the current question
       res.render("answer-question", {
         question,
-        currentPlayer, // Ensure the currentPlayer is passed correctly
+        currentPlayer,
       });
     })
     .catch((error) => {
       console.error(error);
-      res.redirect("/game/play"); // Redirect on error
+      res.redirect("/game/play");
     });
 });
 
 // Route to submit the answer
 router.post("/submit-answer", (req, res) => {
   const { answer } = req.body;
-  let currentPlayerIndex = req.session.currentPlayerIndex; // Use let instead of const
+  let currentPlayerIndex = req.session.currentPlayerIndex;
   const currentPlayer = req.session.players[currentPlayerIndex];
   const currentQuestion = req.session.currentQuestion;
+  const points = req.session.points; // Retrieve points from session
 
   if (!currentQuestion) {
-    return res.redirect("/game/play"); // Redirect if no current question is found
+    return res.redirect("/game/play");
   }
 
   const correctAnswer = currentQuestion.correct_answer;
+  const tip = currentQuestion.tip; // Get the tip column from the question
 
   if (answer === correctAnswer) {
-    currentPlayer.score += 10; // Add points for correct answer
-    req.session.players[currentPlayerIndex] = currentPlayer; // Update session
+    currentPlayer.score += points; // Award points based on the question
+  } else {
+    req.session.tip = tip; // Store the tip for feedback on incorrect answer
   }
 
-  // Update currentPlayerIndex for the next turn
+  req.session.players[currentPlayerIndex] = currentPlayer;
+
+  // Move to the next player
   currentPlayerIndex = (currentPlayerIndex + 1) % req.session.players.length;
-  req.session.currentPlayerIndex = currentPlayerIndex; // Update session
+  req.session.currentPlayerIndex = currentPlayerIndex;
 
   res.redirect("/game/play");
 });
 
 // Render the game page
 router.get("/", (req, res) => {
-  const players = req.session.players || []; // Access players from session
+  const players = req.session.players || [];
   if (req.session.user) {
     res.render("game", { user: req.session.user, players });
   } else {

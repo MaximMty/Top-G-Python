@@ -1,0 +1,36 @@
+/* Container styling for the dice */
+.dice-container {
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+}
+
+/* Dice image with transition effects */
+.dice-container img {
+  width: 100px;
+  height: 100px;
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+/* Bounce animation keyframes */
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-20px);
+  }
+  50% {
+    transform: translateY(10px);
+  }
+  75% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Add animation to the dice */
+.bouncing {
+  animation: bounce 0.5s ease-in-out infinite;
+}

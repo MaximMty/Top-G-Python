@@ -123,7 +123,7 @@ app.get("/logout", (req, res) => {
 
 app.use("/", profileRouter);
 app.use("/", registerRoutes);
-app.use("/game", gameRoutes); // Use game routes
+app.use("/game", gameRoutes);
 
 app.listen(3000, () => {
   console.log("Server is running on http://localhost:3000");

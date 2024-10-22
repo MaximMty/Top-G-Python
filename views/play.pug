@@ -1,29 +1,27 @@
 extends layout
 
+block head
+  link(rel="stylesheet", href="/css/game.css")
+
 block content
   .hero-section-nobg
     .transbox
       h1 Game Play
 
-      // Show the current player's turn
       if player
         p#player-turn It's #{player.name}'s turn! Roll the dice.
 
-        // Display dice roll result
-        p#dice-result Dice roll will appear here...
+        // Cool animated dice container
+        .dice-container
+          img#dice-img(src="/images/dice1.png", alt="Dice", class="dice")
 
-        // Dice roll button
-        form(action="/game/roll-dice", method="POST")
-          button#roll-dice-btn.btn(type="submit") Roll Dice
-
-        // Question options after dice roll
-        form#question-form(action="/game/question", method="POST")
-          button.btn(type="submit" name="type" value="low") Low-Risk Question
-          button.btn(type="submit" name="type" value="high") High-Risk Question
+        // Roll Dice Button
+        form(action="/game/roll-dice", method="POST", id="roll-dice-form")
+          input(type="hidden", name="diceRoll", id="hidden-dice-roll")
+          button#roll-dice-btn.btn(type="button") Roll Dice
       else
         p No player information available. Please restart the game.
 
-      // Display current scores
       h2 Player Scores
       if players && players.length > 0
         ul
@@ -31,6 +29,9 @@ block content
             li #{player.name}: #{player.score} points
       else
         p No players added yet.
+
+      if session.tip
+        p Tip: #{session.tip}
 
 block scripts
   script(src="/js/game.js")

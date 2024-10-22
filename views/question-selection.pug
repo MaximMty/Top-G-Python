@@ -1,9 +1,12 @@
 extends layout
 
+block head
+  link(rel="stylesheet", href="/css/game.css")
+
 block content
   .hero-section-nobg 
     h1 Roll: #{roll}
     h2 #{currentPlayer.name}, choose your question difficulty
     form(action="/game/select-question", method="POST")
-      button.btn(type="submit", name="difficulty", value="easy") Easy Question
-      button.btn(type="submit", name="difficulty", value="hard") Hard Question
+      button.btn(type="submit", name="difficulty", value="easy") Low Risk
+      button.btn(type="submit", name="difficulty", value="hard") High Risk

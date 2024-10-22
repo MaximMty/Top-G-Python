@@ -1,0 +1,18 @@
+extends layout
+
+block content
+  h1 Leaderboard
+
+  table
+    thead
+      tr
+        th Position
+        th Name
+        th Score
+    tbody
+      each player, index in players
+        tr
+          td #{index + 1} <!-- Display player position -->
+          td #{player.name}
+          td #{player.score} <!-- Display player score -->
+  a.btn(href="/game") Play Again

@@ -34,3 +34,17 @@
 .bouncing {
   animation: bounce 0.5s ease-in-out infinite;
 }
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.transbox {
+  animation: fadeIn 0.5s ease-in-out;
+}

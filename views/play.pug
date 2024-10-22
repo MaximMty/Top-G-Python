@@ -32,6 +32,9 @@ block content
 
       if session.tip
         p Tip: #{session.tip}
+        
+      form(action="/game/finish", method="POST")
+        button.btn(type="submit") Finish Game and Get 100 Points
 
 block scripts
   script(src="/js/game.js")

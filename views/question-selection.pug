@@ -5,8 +5,14 @@ block head
 
 block content
   .hero-section-nobg 
-    h1 Roll: #{roll}
-    h2 #{currentPlayer.name}, choose your question difficulty
-    form(action="/game/select-question", method="POST")
-      button.btn(type="submit", name="difficulty", value="easy") Low Risk
-      button.btn(type="submit", name="difficulty", value="hard") High Risk
+    .game-container
+        h1 Roll: #{roll}
+        h2 #{currentPlayer.name}, choose your question difficulty
+
+        // Form to select question difficulty
+        form(action="/game/select-question", method="POST")
+          button.button(type="submit", name="difficulty", value="easy") Low Risk
+          button.button(type="submit", name="difficulty", value="hard") High Risk
+
+block scripts
+  script(src="/js/game.js")

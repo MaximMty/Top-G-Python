@@ -1,18 +1,24 @@
 extends layout
 
-block content
-  h1 Leaderboard
+block head 
+  link(rel="stylesheet", href="/css/game.css")
 
-  table
-    thead
-      tr
-        th Position
-        th Name
-        th Score
-    tbody
-      each player, index in players
-        tr
-          td #{index + 1} <!-- Display player position -->
-          td #{player.name}
-          td #{player.score} <!-- Display player score -->
-  a.btn(href="/game") Play Again
+block content
+  .hero-section-nobg
+    .game-container
+      h1 Results
+
+      table.leaderboard-table
+        thead
+          tr
+            th Position
+            th Name
+            th Score
+        tbody
+          each player, index in players
+            tr
+              td #{index + 1} <!-- Display player position -->
+              td #{player.name}
+              td #{player.score} <!-- Display player score -->
+              
+      a.button(href="/game") Play Again

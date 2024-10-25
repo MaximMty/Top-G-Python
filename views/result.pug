@@ -5,16 +5,16 @@ block head
 
 block content
   .hero-section-nobg
-    .transbox
-      h1 Result
+    .game-container
+        h1 Result
 
-      if result
-        p #{result.message}
-        p You earned #{result.moves} move(s)!
-        p Current Score: #{currentPlayer.score}
+        if result
+          p.result-message #{result.message}
+          p.result-moves You earned #{result.moves} move(s)!
+          p.result-score Current Score: #{currentPlayer.score}
 
-      if session && session.tip
-        p Tip: #{session.tip}
+        if session && session.tip
+          p.tip Tip: #{session.tip}
 
-      form(action="/game/play", method="GET")
-        button.btn(type="submit") Continue to Game
+        form(action="/game/play", method="GET")
+          button.button(type="submit") Continue to Game

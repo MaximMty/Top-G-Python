@@ -5,36 +5,38 @@ block head
 
 block content
   .hero-section-nobg
-    .transbox
-      h1 Game Play
+    .game-container
+        h1 Play
 
-      if player
-        p#player-turn It's #{player.name}'s turn! Roll the dice.
+        if player
+          p#player-turn It's #{player.name}'s turn! Roll the dice.
 
-        // Cool animated dice container
-        .dice-container
-          img#dice-img(src="/images/dice1.png", alt="Dice", class="dice")
+          // Dice Container
+          .dice-container
+            img#dice-img(src="/images/dice1.png", alt="Dice", class="dice")
 
-        // Roll Dice Button
-        form(action="/game/roll-dice", method="POST", id="roll-dice-form")
-          input(type="hidden", name="diceRoll", id="hidden-dice-roll")
-          button#roll-dice-btn.btn(type="button") Roll Dice
-      else
-        p No player information available. Please restart the game.
+          // Roll Dice Button (Ensure it triggers the game logic)
+          form(action="/game/roll-dice", method="POST", id="roll-dice-form")
+            input(type="hidden", name="diceRoll", id="hidden-dice-roll")
+            button#roll-dice-btn.button(type="submit") Roll Dice
+        else
+          p.no-players No player information available. Please restart the game.
 
-      h2 Player Scores
-      if players && players.length > 0
-        ul
-          each player in players
-            li #{player.name}: #{player.score} points
-      else
-        p No players added yet.
+        h2 Player Scores
 
-      if session.tip
-        p Tip: #{session.tip}
-        
-      form(action="/game/finish", method="POST")
-        button.btn(type="submit") Finish Game and Get 100 Points
+        if players && players.length > 0
+          ul.player-list
+            each player in players
+              li.player-item #{player.name}: #{player.score} points
+        else
+          p.no-players No players added yet.
+
+        if session.tip
+          p.game-status Tip: #{session.tip}
+
+        // Player Finish Button
+        form(action="/game/finish", method="POST")
+          button.button(type="submit") Player Finish
 
 block scripts
   script(src="/js/game.js")

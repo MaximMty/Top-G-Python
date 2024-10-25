@@ -5,25 +5,27 @@ block head
 
 block content
   .hero-section-nobg
-    h1 Question for #{currentPlayer.name}
-    h2= question.question
+    .game-container
+      h1 Question for #{currentPlayer.name}
+      h2= question.question
 
-    // Display answer options
-    form(action="/game/submit-answer", method="POST")
-      div
-        label(for="answerA")
-          input(type="radio" id="answerA" name="answer" value="A")
-          | #{question.option_a}
-      div
-        label(for="answerB")
-          input(type="radio" id="answerB" name="answer" value="B")
-          | #{question.option_b}
-      div
-        label(for="answerC")
-          input(type="radio" id="answerC" name="answer" value="C")
-          | #{question.option_c}
-      div
-        label(for="answerD")
-          input(type="radio" id="answerD" name="answer" value="D")
-          | #{question.option_d}
-      button.btn(type="submit") Submit Answer
+      // Display answer options
+      form.answer-form(action="/game/submit-answer", method="POST")
+        .answer-options
+          div.option
+            label(for="answerA")
+              input(type="radio" id="answerA" name="answer" value="A")
+              | #{question.option_a}
+          div.option
+            label(for="answerB")
+              input(type="radio" id="answerB" name="answer" value="B")
+              | #{question.option_b}
+          div.option
+            label(for="answerC")
+              input(type="radio" id="answerC" name="answer" value="C")
+              | #{question.option_c}
+          div.option
+            label(for="answerD")
+              input(type="radio" id="answerD" name="answer" value="D")
+              | #{question.option_d}
+        button.button(type="submit") Submit Answer

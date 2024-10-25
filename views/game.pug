@@ -1,31 +1,31 @@
 extends layout
 
-block head 
+block head
   link(rel="stylesheet", href="/css/game.css")
 
 block content
   .hero-section-nobg
-    .transbox
-      h1 Add Players to the Game
+    .game-container
+        h1 Add Players to the Game
 
-      // Form to add players
-      form(action="/game/add-player", method="POST")
-        input(type="text", name="name", placeholder="Enter Player Name", required)
-        button.btn(type="submit") Add Player
+        // Form to add players
+        form.add-player-form(action="/game/add-player", method="POST")
+          input(type="text", name="name", placeholder="Enter Player Name", required)
+          button.button(type="submit") Add Player
 
-    // Display the list of players if any are added
-    if players.length > 0
-      h2 Current Players
-      ul
-        each player, index in players
-          li= player.name
+        // Display the list of players if any are added
+        if players.length > 0
+          h2 Current Players
+          ul.player-list
+            each player, index in players
+              li.player-item= player.name
 
-      // Button to start the game
-      form(action="/game/start-game", method="POST")
-        button.btn(type="submit") Start Game
-    else
-      p No players added yet. Add a player to get started.
-      
+          // Button to start the game
+          form(action="/game/start-game", method="POST")
+            button.button(type="submit") Start Game
+        else
+          p.no-players No players added yet. Add a player to get started.
+
 block scripts
   script(src="/js/game.js")
   script.

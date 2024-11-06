@@ -1,0 +1,91 @@
+extends layout
+
+block head
+  link(rel='stylesheet', href='/css/game.css')
+
+block content
+  .game-container
+    h1 Game Session #{session.session_id}
+
+    // Add a hidden input field or data attribute to the page for session code
+    input(type='hidden', id='sessionCode', value=session.session_id)
+
+    // Section to display players in the current game lobby
+    h2 Players in this Session
+    ul#playerList
+      // Placeholder for players - this will be dynamically populated by the client-side script
+
+    // Section for creating a new game session if no session is active
+    if !session.session_id || session.session_id == "No active session"
+      h2 Create or Join a Game Session
+      form(action='/onlinegame/create-session', method='POST')
+        button(type='submit') Create New Game Session
+      h3 Or Join an Existing Game Session
+      form(action='/onlinegame/join-session', method='POST')
+        input(type='text', name='sessionCode', placeholder='Enter Session Code', required)
+        button(type='submit') Join Game
+
+    // If a session is active, display the lobby and start options
+    if session.session_id && session.session_id != "No active session"
+      .game-lobby
+        h2 Game Lobby - Waiting for Players...
+        h3 Players in this Session
+        ul#playerList
+          // This list will be dynamically updated by the client-side script
+
+        // If the current user is the host, allow them to start the game
+        if user == session.host_id
+          p You are the host (User: #{user}, Host ID: #{session.host_id}). Click below to start the game.
+          button#startGameButton Start Game
+        else
+          // Display a waiting message for non-host users
+          p Waiting for the host to start the game... (User: #{user}, Host ID: #{session.host_id})
+
+    // Game board area that will be displayed once the game starts
+    #gameBoard(style="display: none")
+      h2 Game Board
+      button#roll-dice-btn Roll Dice
+      div#diceResult Dice roll result will be displayed here.
+      div#playerTurn(style="display: block") Current Player's Turn: <span id="currentPlayerName"></span>
+      div#playerPositions
+        ul#playerPositionsList
+          li Player positions will be updated here.
+          
+    // Add this to the section where you want the difficulty selection to appear
+    #questionDifficulty(style="display: none")
+      h3 Choose Your Question Difficulty
+      button#lowRiskBtn Low Risk
+      button#highRiskBtn High Risk
+
+    // Question section (hidden until a question is selected)
+    #questionSection(style="display: none")
+      h3 Question:
+      p#questionText
+      form#answerForm
+        div
+          input(type="radio" id="optionA" name="option" value="A" required)
+          label(for="optionA") #optionA
+        div
+          input(type="radio" id="optionB" name="option" value="B")
+          label(for="optionB") #optionB
+        div
+          input(type="radio" id="optionC" name="option" value="C")
+          label(for="optionC") #optionC
+        div
+          input(type="radio" id="optionD" name="option" value="D")
+          label(for="optionD") #optionD
+      button#submitAnswerBtn(type="button") Submit Answer
+
+    // Winner announcement area that will be displayed once the game ends
+    #winnerAnnouncement(style="display: none")
+
+block scripts
+  // Include the Socket.io client script first
+  script(src='/socket.io/socket.io.js')
+
+  // Custom script to set window.currentUser
+  script.
+    window.currentUser = "#{user}";
+
+  // Custom script that uses socket.io (onlineGameClient.js) with type="module"
+  script(type="module" src='/js/onlineGameClient.js')

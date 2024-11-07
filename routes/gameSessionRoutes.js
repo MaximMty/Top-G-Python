@@ -11,9 +11,9 @@ router.post("/create-session", (req, res) => {
   const sessionId = uuidv4();
   const userId = req.session.user;
 
-  const insertQuery =
+  const insertSessionQuery =
     "INSERT INTO game_sessions (session_id, host_id) VALUES (?, ?)";
-  db.query(insertQuery, [sessionId, userId], (err, results) => {
+  db.query(insertSessionQuery, [sessionId, userId], (err, results) => {
     if (err) {
       console.error("Database error while creating session:", err);
       return res.status(500).send("Failed to create session.");
@@ -23,37 +23,49 @@ router.post("/create-session", (req, res) => {
     req.session.session_id = sessionId;
     req.session.host_id = userId; // Set the host ID in the session
 
-    req.session.save((saveErr) => {
-      if (saveErr) {
-        console.error("Error saving session (create-session):", saveErr);
-        return res.status(500).send("Failed to create session.");
+    // Add the host as a player in the session_players table
+    const insertPlayerQuery = `
+      INSERT INTO session_players (session_id, player_id)
+      VALUES (?, ?)
+      ON DUPLICATE KEY UPDATE player_id = player_id;`;
+
+    db.query(insertPlayerQuery, [sessionId, userId], (playerErr) => {
+      if (playerErr) {
+        console.error("Database error while adding host as player:", playerErr);
+        return res.status(500).send("Failed to add host as player.");
       }
 
-      console.log("Session successfully saved (create-session):", req.session);
-      res.redirect(`/onlinegame`);
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error("Error saving session (create-session):", saveErr);
+          return res.status(500).send("Failed to create session.");
+        }
+
+        console.log(
+          "Session successfully saved (create-session):",
+          req.session
+        );
+        res.redirect(`/onlinegame`);
+      });
     });
   });
 });
 
-// Route to join an existing game session
 router.post("/join-session", (req, res) => {
   if (!req.session.user) {
+    console.log("User not logged in, cannot join session.");
     return res.status(403).send("Not logged in.");
   }
 
   const { sessionCode } = req.body;
   const userId = req.session.user;
 
-  // Fetch players if they are already in the session, otherwise initialize the array
-  if (!req.session.players) {
-    req.session.players = [];
+  if (!sessionCode) {
+    console.log("No session code provided.");
+    return res.status(400).send("No session code provided.");
   }
 
   // Add the new player to the session players array if they are not already there
-  if (!req.session.players.includes(userId)) {
-    req.session.players.push(userId);
-  }
-
   const insertQuery = `
     INSERT INTO session_players (session_id, player_id)
     VALUES (?, ?)
@@ -88,10 +100,7 @@ router.post("/join-session", (req, res) => {
             return res.status(500).send("Failed to save session.");
           }
 
-          console.log(
-            "Player successfully joined session:",
-            req.session.players
-          );
+          console.log("Player successfully joined session:", userId);
           res.redirect(`/onlinegame`);
         });
       }

@@ -119,7 +119,6 @@ app.use("/onlinegame", onlineGameRoutes);
 // Socket.io Integration
 const sessionPlayers = {};
 
-// Socket.io Integration
 io.on("connection", (socket) => {
   // Handle user connection
   if (socket.request.session && socket.request.session.user) {
@@ -144,39 +143,14 @@ io.on("connection", (socket) => {
       sessionPlayers[sessionCode] = [];
     }
 
-    // Update sessionPlayers with both player id and name, and avoid duplicates
-    if (!sessionPlayers[sessionCode].some((player) => player.name === user)) {
-      const player = { id: user, name: user }; // Here, we assume the user is both ID and name
-      sessionPlayers[sessionCode].push(player);
-
-      // Insert player into session_players table
-      const insertPlayerQuery = `
-      INSERT INTO session_players (session_id, player_id)
-      VALUES (?, ?)
-      ON DUPLICATE KEY UPDATE player_id = player_id;`;
-
-      db.query(insertPlayerQuery, [sessionCode, user], (err) => {
-        if (err) {
-          console.error("Database error adding player to session:", err);
-        } else {
-          console.log(`Player ${user} added to session ${sessionCode}`);
-        }
-      });
-
-      // Update session with full player list
-      if (!socket.request.session.players) {
-        socket.request.session.players = [];
-      }
-      socket.request.session.players = sessionPlayers[sessionCode];
-      socket.request.session.save((saveErr) => {
-        if (saveErr) {
-          console.error("Error saving session (joinSession):", saveErr);
-        }
-      });
+    // Check if the user is already in the sessionPlayers list to avoid duplicates
+    if (!sessionPlayers[sessionCode].some((player) => player === user)) {
+      sessionPlayers[sessionCode].push(user);
     }
 
+    // Emit an update to all players in the session with the updated player list
     io.to(sessionCode).emit("updatePlayerList", {
-      players: sessionPlayers[sessionCode],
+      players: sessionPlayers[sessionCode].map((player) => ({ name: player })),
     });
   });
 
@@ -198,9 +172,30 @@ io.on("connection", (socket) => {
 
       console.log(`Game state updated in database for session: ${sessionCode}`);
 
-      // Emit to all players that the game has started
-      io.to(sessionCode).emit("gameStarted", {
-        currentPlayer: sessionPlayers[sessionCode][0], // Set the initial player to start
+      // Fetch all players and add them to the session
+      const getPlayersQuery = `SELECT player_id FROM session_players WHERE session_id = ?`;
+      db.query(getPlayersQuery, [sessionCode], (fetchErr, results) => {
+        if (fetchErr) {
+          console.error(
+            "Database error fetching players for game start:",
+            fetchErr
+          );
+          return;
+        }
+
+        // Ensure players list is updated in session
+        socket.request.session.players = results.map((row) => row.player_id);
+        socket.request.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Error saving session after game start:", saveErr);
+            return;
+          }
+
+          // Emit the gameStarted event
+          io.to(sessionCode).emit("gameStarted", {
+            currentPlayer: { name: results[0].player_id },
+          });
+        });
       });
     });
   });
@@ -208,16 +203,22 @@ io.on("connection", (socket) => {
   // Handle user disconnection
   socket.on("disconnect", () => {
     const user = socket.request.session.user;
-    Object.keys(sessionPlayers).forEach((sessionCode) => {
-      const index = sessionPlayers[sessionCode].indexOf(user);
-      if (index !== -1) {
-        sessionPlayers[sessionCode].splice(index, 1);
-        io.to(sessionCode).emit("updatePlayerList", {
-          players: sessionPlayers[sessionCode],
-        });
-      }
-    });
     console.log(`${user} disconnected`);
+
+    if (user) {
+      // Remove the user from all sessions they are part of
+      Object.keys(sessionPlayers).forEach((sessionCode) => {
+        const playerIndex = sessionPlayers[sessionCode].indexOf(user);
+        if (playerIndex !== -1) {
+          sessionPlayers[sessionCode].splice(playerIndex, 1);
+          io.to(sessionCode).emit("updatePlayerList", {
+            players: sessionPlayers[sessionCode].map((player) => ({
+              name: player,
+            })),
+          });
+        }
+      });
+    }
   });
 });
 

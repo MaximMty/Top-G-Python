@@ -16,115 +16,180 @@ router.post("/answer-question", (req, res) => {
     return res.status(400).send("Missing question data.");
   }
 
-  const questionTable =
-    difficulty === "hard" ? "high_risk_questions" : "low_risk_questions";
-
-  const query = `SELECT correct_answer, tip FROM ${questionTable} WHERE id = ?`;
-  db.query(query, [questionId], (err, results) => {
-    if (err) {
-      console.error("Database error while checking the answer:", err);
-      return res.status(500).send("Failed to check the answer.");
+  // Fetch the current game session from the database
+  const getSessionQuery = `SELECT * FROM game_sessions WHERE session_id = ?`;
+  db.query(getSessionQuery, [sessionCode], (sessionErr, sessionResults) => {
+    if (sessionErr) {
+      console.error("Database error while fetching session:", sessionErr);
+      return res.status(500).send("Failed to fetch session.");
     }
 
-    if (results.length === 0) {
-      console.error("Question not found with id:", questionId);
-      return res.status(404).send("Question not found.");
+    if (sessionResults.length === 0) {
+      console.error("Session not found with id:", sessionCode);
+      return res.status(404).send("Session not found.");
     }
 
-    const correctAnswer = results[0].correct_answer;
-    const tip = results[0].tip;
+    const gameSession = sessionResults[0];
+    const currentPlayerIndex = gameSession.current_player_index;
 
-    const currentPlayerIndex = req.session.currentPlayerIndex;
-    const players = req.session.players;
+    // Fetch the players from the database
+    const getPlayersQuery = `SELECT player_id FROM session_players WHERE session_id = ? ORDER BY id ASC`;
+    db.query(getPlayersQuery, [sessionCode], (playersErr, playersResults) => {
+      if (playersErr) {
+        console.error("Database error while fetching players:", playersErr);
+        return res.status(500).send("Failed to fetch players.");
+      }
 
-    if (!players || players.length === 0) {
-      console.error("No players found in session.");
-      return res.status(500).send("No players found in session.");
-    }
+      if (playersResults.length === 0) {
+        console.error("No players found in session:", sessionCode);
+        return res.status(500).send("No players found in session.");
+      }
 
-    const currentPlayer = players[currentPlayerIndex];
-    const diceValue = req.session.diceValue; // Retrieve the dice value stored in the session
+      // Extract the list of player IDs
+      const players = playersResults.map((row) => row.player_id);
 
-    if (!diceValue) {
-      console.error("No dice value found in session.");
-      return res.status(500).send("No dice value found.");
-    }
+      if (
+        typeof currentPlayerIndex === "undefined" ||
+        currentPlayerIndex < 0 ||
+        currentPlayerIndex >= players.length
+      ) {
+        console.error("Invalid current player index:", currentPlayerIndex);
+        return res.status(500).send("Invalid current player index.");
+      }
 
-    let points = 0;
-    let moveSteps = 0;
-    let responseMessage = "";
+      const currentPlayer = players[currentPlayerIndex];
 
-    // Determine points and moves based on the answer and difficulty
-    if (answer === correctAnswer) {
-      points = difficulty === "hard" ? 20 : 10;
-      moveSteps = difficulty === "hard" ? diceValue * 2 : diceValue;
-      responseMessage = `Correct! You've earned ${points} points and can move ${moveSteps} steps!`;
-    } else {
-      points = difficulty === "hard" ? 0 : 5;
-      moveSteps = difficulty === "hard" ? 0 : diceValue;
-      responseMessage =
-        difficulty === "hard"
-          ? `Incorrect. The correct answer was '${correctAnswer}'. No points awarded.`
-          : `Incorrect. The correct answer was '${correctAnswer}'. Here's a tip: ${tip}. You can move ${moveSteps} steps.`;
-    }
+      const diceValue = req.session.diceValue;
 
-    console.log("Updating score for player:", {
-      playerId: currentPlayer,
-      points,
-      sessionCode,
-    });
+      if (!diceValue) {
+        console.error("No dice value found in session.");
+        return res.status(500).send("No dice value found.");
+      }
 
-    const updateScoreQuery = `
-      UPDATE session_players 
-      SET score = score + ? 
-      WHERE session_id = ? AND player_id = ?
-    `;
+      const questionTable =
+        difficulty === "hard" ? "high_risk_questions" : "low_risk_questions";
+      const query = `SELECT correct_answer, tip FROM ${questionTable} WHERE id = ?`;
 
-    db.query(
-      updateScoreQuery,
-      [points, sessionCode, currentPlayer],
-      (updateErr) => {
-        if (updateErr) {
-          console.error("Database error while updating score:", updateErr);
-          return res.status(500).send("Failed to update player score.");
+      db.query(query, [questionId], (err, results) => {
+        if (err) {
+          console.error("Database error while checking the answer:", err);
+          return res.status(500).send("Failed to check the answer.");
         }
 
-        // Update the current player index
-        req.session.currentPlayerIndex =
-          (currentPlayerIndex + 1) % players.length;
+        if (results.length === 0) {
+          console.error("Question not found with id:", questionId);
+          return res.status(404).send("Question not found.");
+        }
 
-        // Save the updated session state before emitting the next turn
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error("Error saving session:", saveErr);
-            return res.status(500).json({
-              success: false,
-              message: "Failed to update player turn.",
-            });
-          }
+        const correctAnswer = results[0].correct_answer;
+        const tip = results[0].tip;
 
-          // Emit `turnEnded` to all players in the session AFTER saving session
-          const nextPlayerIndex = req.session.currentPlayerIndex;
-          const nextPlayer = players[nextPlayerIndex];
+        let points = 0;
+        let moveSteps = 0;
+        let responseMessage = "";
 
-          console.log(`It's now ${nextPlayer}'s turn`);
+        // Determine points and moves based on the answer and difficulty
+        if (answer === correctAnswer) {
+          points = difficulty === "hard" ? 20 : 10;
+          moveSteps = difficulty === "hard" ? diceValue * 2 : diceValue;
+          responseMessage = `Correct! You've earned ${points} points and can move ${moveSteps} steps!`;
+        } else {
+          points = difficulty === "hard" ? 0 : 5;
+          moveSteps = difficulty === "hard" ? 0 : diceValue;
+          responseMessage =
+            difficulty === "hard"
+              ? `Incorrect. The correct answer was '${correctAnswer}'. No points awarded.`
+              : `Incorrect. The correct answer was '${correctAnswer}'. Here's a tip: ${tip}. You can move ${moveSteps} steps.`;
+        }
 
-          req.app.get("io").to(sessionCode).emit("turnEnded", {
-            currentPlayer: nextPlayer, // Send just the player name
-            moveSteps: moveSteps, // Inform all players about the steps
-          });
-
-          // Respond to the player who made the move
-          res.json({
-            success: true,
-            points,
-            moveSteps,
-            message: responseMessage,
-            currentPlayer: nextPlayer, // Send just the player name
-          });
+        console.log("Updating score for player:", {
+          playerId: currentPlayer,
+          points,
+          sessionCode,
         });
-      }
-    );
+
+        const updateScoreQuery = `
+          UPDATE session_players 
+          SET score = score + ? 
+          WHERE session_id = ? AND player_id = ?
+        `;
+
+        // Update player's score
+        db.query(
+          updateScoreQuery,
+          [points, sessionCode, currentPlayer],
+          (updateErr) => {
+            if (updateErr) {
+              console.error("Database error while updating score:", updateErr);
+              return res.status(500).send("Failed to update player score.");
+            }
+
+            // Update the current player index
+            const nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
+
+            const updatePlayerIndexQuery = `
+  UPDATE game_sessions 
+  SET current_player_index = ? 
+  WHERE session_id = ?
+`;
+
+            // Log the player index update query for debugging
+            console.log(
+              "Executing player index update query:",
+              updatePlayerIndexQuery,
+              "with values:",
+              nextPlayerIndex,
+              sessionCode
+            );
+
+            // Update current player index in the database
+            db.query(
+              updatePlayerIndexQuery,
+              [nextPlayerIndex, sessionCode],
+              (playerIndexErr, result) => {
+                if (playerIndexErr) {
+                  console.error(
+                    "Database error while updating player index:",
+                    playerIndexErr
+                  );
+                  return res.status(500).send("Failed to update player turn.");
+                }
+
+                // Log if the update was successful
+                if (result.affectedRows > 0) {
+                  console.log(
+                    `Successfully updated player index to ${nextPlayerIndex}`
+                  );
+                } else {
+                  console.error(
+                    "No rows were updated. Check if session_id is valid."
+                  );
+                }
+
+                console.log(`It's now player index ${nextPlayerIndex}'s turn`);
+
+                req.app
+                  .get("io")
+                  .to(sessionCode)
+                  .emit("turnEnded", {
+                    currentPlayer: { name: players[nextPlayerIndex] }, // Ensure currentPlayer is an object with a `name` property
+                    moveSteps: moveSteps, // Inform all players about the steps
+                  });
+
+                // Respond to the player who made the move
+                res.json({
+                  success: true,
+                  points,
+                  moveSteps,
+                  message: responseMessage,
+                  currentPlayer: { name: players[nextPlayerIndex] }, // Ensure currentPlayer is an object with a `name` property
+                });
+              }
+            );
+          }
+        );
+      });
+    });
   });
 });
 

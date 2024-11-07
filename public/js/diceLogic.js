@@ -29,7 +29,7 @@ export function setupDiceRolling(socket) {
             socket.emit("diceRolled", {
               playerId: window.currentUser,
               diceValue: data.diceRoll,
-              currentPlayer: data.currentPlayer,
+              currentPlayer: { name: window.currentUser }, // Ensure currentPlayer has a `name` property
             });
 
             // Ensure questionDifficulty element exists before trying to change its style
@@ -61,8 +61,6 @@ export function updatePlayerTurn(currentPlayer) {
     console.error("Current player is undefined or missing the name property");
     if (playerTurnElement) {
       playerTurnElement.textContent = "Waiting for the current player...";
-      console.log("Current player name:", currentPlayer.name);
-      console.log("Window current user:", window.currentUser);
     }
     if (rollDiceButton) {
       rollDiceButton.style.display = "none";

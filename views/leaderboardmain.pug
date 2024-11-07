@@ -1,0 +1,17 @@
+extends layout
+
+block head
+  link(rel='stylesheet', href='/css/leaderboard.css')
+
+block content
+  .leaderboard-container
+    h1 Leaderboard - Top 10 Players
+    ul.leaderboard-list
+      each player, index in players
+        li
+          span.rank #{index + 1}.
+          span.name #{player.name}
+          span.score #{player.score} points
+
+block scripts
+  // Include any additional scripts if needed here

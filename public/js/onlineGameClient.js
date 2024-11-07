@@ -64,8 +64,73 @@ document.addEventListener("DOMContentLoaded", () => {
           socket.emit("startGame", sessionCode);
         });
       }
+
+      // Set up the finish turn button listener
+      const finishTurnButton = document.getElementById("finishTurnBtn");
+      if (finishTurnButton) {
+        finishTurnButton.addEventListener("click", () => {
+          fetch("/onlinegame/finish-turn", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "same-origin",
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                alert("You have finished your turn and are now spectating.");
+
+                // Add the user to the list of finished players in session storage
+                let finishedPlayers =
+                  JSON.parse(sessionStorage.getItem("finishedPlayers")) || [];
+                finishedPlayers.push(window.currentUser);
+                sessionStorage.setItem(
+                  "finishedPlayers",
+                  JSON.stringify(finishedPlayers)
+                );
+
+                // Hide the roll dice button
+                const rollDiceButton = document.getElementById("roll-dice-btn");
+                if (rollDiceButton) {
+                  rollDiceButton.style.display = "none";
+                }
+              } else {
+                console.error("Failed to finish turn:", data.message);
+              }
+            })
+            .catch((err) => console.error("Error finishing turn:", err));
+        });
+      }
     }
   } else {
     console.error("Session code not found.");
   }
 });
+
+// Function to set up "Finish Turn" button listener
+function setupFinishTurn() {
+  const finishTurnButton = document.getElementById("finishTurnBtn");
+  if (finishTurnButton) {
+    finishTurnButton.addEventListener("click", () => {
+      fetch("/onlinegame/finish-turn", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            alert("You have finished your turn and are now spectating.");
+          } else {
+            console.error("Failed to finish turn:", data.message);
+          }
+        })
+        .catch((err) => console.error("Error finishing turn:", err));
+    });
+  } else {
+    console.warn("Finish Turn button not found in DOM.");
+  }
+}

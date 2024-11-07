@@ -43,6 +43,7 @@ a {
   align-items: center;
   margin: 0;
   padding: 0;
+  margin-left: -50px;
 }
 
 .nav-links li {
@@ -58,6 +59,29 @@ a {
 
 .nav-links a:hover {
   color: #ffffff;
+}
+
+/* Leaderboard Table */
+.leaderboard-table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+  color: #e0c084;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 15px;
+  border: 1px solid #e0c084;
+  text-align: center;
+}
+
+.leaderboard-table th {
+  background-color: #333333;
+}
+
+.leaderboard-table td {
+  background-color: #262626;
 }
 
 /* Login Button */

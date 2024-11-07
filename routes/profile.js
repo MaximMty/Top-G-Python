@@ -4,10 +4,20 @@ const multer = require("multer");
 const router = express.Router();
 const db = require("../routes/db");
 const fs = require("fs"); // File system operations
+const path = require("path");
 
 // Multer setup for avatar uploads
+const storage = multer.diskStorage({
+  destination: "public/uploads/avatars/",
+  filename: (req, file, cb) => {
+    const extension = path.extname(file.originalname);
+    const filename = `${file.fieldname}-${Date.now()}${extension}`;
+    cb(null, filename);
+  },
+});
+
 const upload = multer({
-  dest: "public/uploads/avatars/",
+  storage: storage,
   limits: { fileSize: 2 * 1024 * 1024 }, // Limit: 2MB
 });
 

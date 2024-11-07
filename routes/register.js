@@ -3,12 +3,20 @@ const bcrypt = require("bcrypt");
 const router = express.Router();
 const db = require("./db"); // Database connection
 
-// Register Route
+// Serve the registration form
+router.get("/register", (req, res) => {
+  res.render("register", { title: "Register" });
+});
+
+// Handle registration form submission
 router.post("/register", async (req, res) => {
   const { username, password, confirm_password } = req.body;
 
   if (password !== confirm_password) {
-    return res.status(400).send("Passwords do not match");
+    return res.render("register", {
+      title: "Register",
+      message: "Passwords do not match",
+    });
   }
 
   try {
@@ -17,7 +25,10 @@ router.post("/register", async (req, res) => {
     db.query(query, [username, hashedPassword], (err) => {
       if (err) {
         console.error("Error inserting user:", err);
-        return res.status(500).send("Registration failed");
+        return res.render("register", {
+          title: "Register",
+          message: "Registration failed. Try again.",
+        });
       }
       res.redirect("/login");
     });

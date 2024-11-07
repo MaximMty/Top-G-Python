@@ -10,6 +10,7 @@ const gameRoutes = require("./routes/game");
 const onlineGameRoutes = require("./routes/onlineGameRoutes");
 const http = require("http");
 const socketIo = require("socket.io");
+const leaderboardRoutes = require("./routes/leaderboardmain");
 
 const app = express();
 const server = http.createServer(app);
@@ -47,6 +48,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // View Engine
 app.set("view engine", "pug");
 app.set("views", path.join(__dirname, "views"));
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -54,9 +56,27 @@ app.use(bodyParser.json());
 
 // Routes
 app.get("/", (req, res) => {
-  res.render("index", { title: "Home", user: req.session.user });
-});
+  // Query the top 3 players from the leaderboard
+  const leaderboardQuery = `
+    SELECT name, score
+    FROM leaderboard
+    ORDER BY score DESC
+    LIMIT 3
+  `;
 
+  db.query(leaderboardQuery, (err, results) => {
+    if (err) {
+      console.error("Error querying leaderboard:", err);
+      return res.status(500).send("Internal server error");
+    }
+
+    // Render the home page and pass the leaderboard data
+    res.render("index", {
+      user: req.session.user, // Ensure the user session is passed if logged in
+      leaderboard: results,
+    });
+  });
+});
 app.get("/login", (req, res) => {
   res.render("login", {
     title: "Login",
@@ -115,6 +135,7 @@ app.use("/", profileRouter);
 app.use("/", registerRoutes);
 app.use("/game", gameRoutes);
 app.use("/onlinegame", onlineGameRoutes);
+app.use("/", leaderboardRoutes);
 
 // Socket.io Integration
 const sessionPlayers = {};
@@ -144,14 +165,54 @@ io.on("connection", (socket) => {
     }
 
     // Check if the user is already in the sessionPlayers list to avoid duplicates
-    if (!sessionPlayers[sessionCode].some((player) => player === user)) {
-      sessionPlayers[sessionCode].push(user);
-    }
+    if (!sessionPlayers[sessionCode].some((player) => player.name === user)) {
+      // Fetch player information (including avatar) from the database
+      const selectPlayerQuery =
+        "SELECT username, avatar FROM users WHERE username = ?";
+      db.query(selectPlayerQuery, [user], (err, result) => {
+        if (err) {
+          console.error("Database error fetching user details:", err);
+          return;
+        }
 
-    // Emit an update to all players in the session with the updated player list
-    io.to(sessionCode).emit("updatePlayerList", {
-      players: sessionPlayers[sessionCode].map((player) => ({ name: player })),
-    });
+        if (result.length > 0) {
+          // Determine protocol and host
+          let protocol =
+            socket.request.headers["x-forwarded-proto"] ||
+            socket.request.protocol;
+          protocol = protocol && protocol.includes("http") ? protocol : "http"; // Fallback to 'http' if undefined
+
+          const host = socket.request.headers.host;
+
+          console.log("Protocol:", protocol);
+          console.log("Host:", host);
+
+          const playerData = {
+            name: result[0].username,
+            avatar: result[0].avatar
+              ? `${protocol}://${host}${result[0].avatar}`
+              : `${protocol}://${host}/uploads/avatars/default.png`,
+          };
+
+          console.log("Constructed Avatar URL:", playerData.avatar);
+
+          // Add the player to the sessionPlayers list
+          sessionPlayers[sessionCode].push(playerData);
+
+          // Emit an update to all players in the session with the updated player list
+          io.to(sessionCode).emit("updatePlayerList", {
+            players: sessionPlayers[sessionCode],
+          });
+        } else {
+          console.error(`User ${user} not found in the database.`);
+        }
+      });
+    } else {
+      // If the player already exists in the session, simply emit the updated list
+      io.to(sessionCode).emit("updatePlayerList", {
+        players: sessionPlayers[sessionCode],
+      });
+    }
   });
 
   // Handle game start event

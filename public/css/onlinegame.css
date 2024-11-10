@@ -269,6 +269,40 @@ form input[type="text"]:focus {
   font-weight: bold;
 }
 
+/* Back to Home Button Styling */
+.back-home-btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  background-color: #e0c084;
+  color: #121212;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 20px auto;
+  display: block;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
+  max-width: 200px;
+}
+
+.back-home-btn:hover {
+  background-color: #ffffff;
+  color: #333;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.back-home-btn:active {
+  transform: translateY(1px);
+}
+
+.back-home-btn:focus {
+  outline: 2px solid #f1f1f1;
+  box-shadow: 0 0 5px rgba(241, 241, 241, 0.7);
+}
+
 /* Responsive Styles */
 @media (max-width: 768px) {
   .game-container {
@@ -306,5 +340,8 @@ form input[type="text"]:focus {
   .player-avatar {
     width: 40px;
     height: 40px;
+  }
+  .player-list {
+    margin: 15px;
   }
 }

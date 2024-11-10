@@ -3,13 +3,11 @@ const router = express.Router();
 const db = require("../routes/db"); // or '../db' if `db.js` is in the root folder
 const { v4: uuidv4 } = require("uuid");
 
-// Import the separate route modules
 const gameSessionRoutes = require("./gameSessionRoutes");
 const gamePlayRoutes = require("./gamePlayRoutes");
 const playerRoutes = require("./playerRoutes");
 const diceRoutes = require("./diceRoutes");
 
-// Use the separate routes under a common path
 router.use("/", gameSessionRoutes);
 router.use("/", gamePlayRoutes);
 router.use("/", playerRoutes);
@@ -346,7 +344,7 @@ function getNextActivePlayerIndex(
   return nextIndex;
 }
 
-// Add this function to handle ending the game
+// Function to handle ending the game
 function endGame(sessionCode, req, res) {
   const getPlayerScoresQuery = `
     SELECT player_id, score 
@@ -385,15 +383,28 @@ function endGame(sessionCode, req, res) {
         return res.status(500).send("Failed to update leaderboard.");
       }
 
-      // Emit the `gameEnded` event with rankings to all clients
-      req.app.get("io").to(sessionCode).emit("gameEnded", {
-        rankings: finalRankings,
-      });
+      // Update the game state to "finished"
+      const updateGameStateQuery = `
+        UPDATE game_sessions
+        SET game_stage = 'finished'
+        WHERE session_id = ?
+      `;
+      db.query(updateGameStateQuery, [sessionCode], (updateErr) => {
+        if (updateErr) {
+          console.error("Error updating game state to finished:", updateErr);
+          return res.status(500).send("Failed to update game state.");
+        }
 
-      // Respond to the client confirming that the game has ended
-      res.json({
-        success: true,
-        message: "Game has ended successfully.",
+        // Emit the `gameEnded` event with rankings to all clients
+        req.app.get("io").to(sessionCode).emit("gameEnded", {
+          rankings: finalRankings,
+        });
+
+        // Respond to the client confirming that the game has ended
+        res.json({
+          success: true,
+          message: "Game has ended successfully.",
+        });
       });
     });
   });

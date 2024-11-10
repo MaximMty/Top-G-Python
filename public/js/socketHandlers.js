@@ -100,6 +100,7 @@ export function setupSocketListeners(socket) {
     }
   });
 
+  // Handle game ended event
   socket.on("gameEnded", (data) => {
     console.log("Game has ended! Here are the rankings:");
 
@@ -127,6 +128,16 @@ export function setupSocketListeners(socket) {
       document.getElementById("gameBoard").style.display = "none";
       document.getElementById("questionDifficulty").style.display = "none";
       document.getElementById("questionSection").style.display = "none";
+
+      // Create a button to go back to the home page
+      const backButton = document.createElement("button");
+      backButton.textContent = "Back to Home";
+      backButton.classList.add("back-home-btn");
+      backButton.addEventListener("click", () => {
+        window.location.href = "/";
+      });
+
+      rankingsListElement.appendChild(backButton);
     } else {
       console.error("Ranking list element not found in DOM.");
     }

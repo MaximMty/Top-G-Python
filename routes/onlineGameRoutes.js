@@ -331,7 +331,7 @@ function getNextActivePlayerIndex(
   let nextIndex = (currentPlayerIndex + 1) % players.length;
 
   // Skip players who have finished the game
-  while (finishedPlayers.includes(players[nextIndex])) {
+  while (finishedPlayers.includes(players[nextIndex].player_id)) {
     nextIndex = (nextIndex + 1) % players.length;
 
     // Safety measure to avoid infinite loop

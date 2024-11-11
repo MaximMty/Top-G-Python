@@ -33,7 +33,7 @@ router.post("/answer-question", (req, res) => {
     const currentPlayerIndex = gameSession.current_player_index;
 
     // Fetch the players from the database
-    const getPlayersQuery = `SELECT player_id FROM session_players WHERE session_id = ? ORDER BY id ASC`;
+    const getPlayersQuery = `SELECT player_id, finished FROM session_players WHERE session_id = ? ORDER BY id ASC`;
     db.query(getPlayersQuery, [sessionCode], (playersErr, playersResults) => {
       if (playersErr) {
         console.error("Database error while fetching players:", playersErr);
@@ -45,19 +45,23 @@ router.post("/answer-question", (req, res) => {
         return res.status(500).send("No players found in session.");
       }
 
-      // Extract the list of player IDs
-      const players = playersResults.map((row) => row.player_id);
+      // Extract the list of players and their finished status
+      const players = playersResults.map((row) => ({
+        playerId: row.player_id,
+        finished: row.finished,
+      }));
 
-      if (
-        typeof currentPlayerIndex === "undefined" ||
-        currentPlayerIndex < 0 ||
-        currentPlayerIndex >= players.length
-      ) {
+      if (currentPlayerIndex < 0 || currentPlayerIndex >= players.length) {
         console.error("Invalid current player index:", currentPlayerIndex);
         return res.status(500).send("Invalid current player index.");
       }
 
       const currentPlayer = players[currentPlayerIndex];
+
+      if (currentPlayer.finished) {
+        console.error("Current player has already finished.");
+        return res.status(403).send("Player has already finished.");
+      }
 
       const diceValue = req.session.diceValue;
 
@@ -103,7 +107,7 @@ router.post("/answer-question", (req, res) => {
         }
 
         console.log("Updating score for player:", {
-          playerId: currentPlayer,
+          playerId: currentPlayer.playerId,
           points,
           sessionCode,
         });
@@ -117,36 +121,33 @@ router.post("/answer-question", (req, res) => {
         // Update player's score
         db.query(
           updateScoreQuery,
-          [points, sessionCode, currentPlayer],
+          [points, sessionCode, currentPlayer.playerId],
           (updateErr) => {
             if (updateErr) {
               console.error("Database error while updating score:", updateErr);
               return res.status(500).send("Failed to update player score.");
             }
 
-            // Update the current player index
-            const nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            // Find the next player who has not finished
+            let nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            while (
+              players[nextPlayerIndex].finished &&
+              nextPlayerIndex !== currentPlayerIndex
+            ) {
+              nextPlayerIndex = (nextPlayerIndex + 1) % players.length;
+            }
 
             const updatePlayerIndexQuery = `
-  UPDATE game_sessions 
-  SET current_player_index = ? 
-  WHERE session_id = ?
-`;
-
-            // Log the player index update query for debugging
-            console.log(
-              "Executing player index update query:",
-              updatePlayerIndexQuery,
-              "with values:",
-              nextPlayerIndex,
-              sessionCode
-            );
+              UPDATE game_sessions 
+              SET current_player_index = ? 
+              WHERE session_id = ?
+            `;
 
             // Update current player index in the database
             db.query(
               updatePlayerIndexQuery,
               [nextPlayerIndex, sessionCode],
-              (playerIndexErr, result) => {
+              (playerIndexErr) => {
                 if (playerIndexErr) {
                   console.error(
                     "Database error while updating player index:",
@@ -155,25 +156,12 @@ router.post("/answer-question", (req, res) => {
                   return res.status(500).send("Failed to update player turn.");
                 }
 
-                // Log if the update was successful
-                if (result.affectedRows > 0) {
-                  console.log(
-                    `Successfully updated player index to ${nextPlayerIndex}`
-                  );
-                } else {
-                  console.error(
-                    "No rows were updated. Check if session_id is valid."
-                  );
-                }
-
-                console.log(`It's now player index ${nextPlayerIndex}'s turn`);
-
                 req.app
                   .get("io")
                   .to(sessionCode)
                   .emit("turnEnded", {
-                    currentPlayer: { name: players[nextPlayerIndex] }, // Ensure currentPlayer is an object with a `name` property
-                    moveSteps: moveSteps, // Inform all players about the steps
+                    currentPlayer: { name: players[nextPlayerIndex].playerId },
+                    moveSteps: moveSteps,
                   });
 
                 // Respond to the player who made the move
@@ -182,7 +170,7 @@ router.post("/answer-question", (req, res) => {
                   points,
                   moveSteps,
                   message: responseMessage,
-                  currentPlayer: { name: players[nextPlayerIndex] }, // Ensure currentPlayer is an object with a `name` property
+                  currentPlayer: { name: players[nextPlayerIndex].playerId },
                 });
               }
             );
